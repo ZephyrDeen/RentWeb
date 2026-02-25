@@ -1,0 +1,20 @@
+# macOS
+.DS_Store
+
+# Documentation files (internal/WIP)
+简历描述-最终版.md
+
+# My-app project files
+my-app/prisma.config.ts
+my-app/components.json
+my-app/document.docx
+
+# Documentation (optional - uncomment if you don't want to track these)
+my-app/REACT_QUERY_INTEGRATION.md
+my-app/REACT_QUERY_MIGRATION.md
+my-app/REDIS_INTEGRATION.md
+my-app/MIGRATION_INSTRUCTIONS.md
+my-app/MIGRATION_COMPLETE.md
+my-app/MIGRATION_TICKET_REPLIES.md
+my-app/INVITATION_FEATURE.md
+my-app/CHANGELOG.md
