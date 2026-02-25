@@ -1,0 +1,148 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id                String        @id @default(uuid())
+  email             String        @unique
+  name              String
+  phone             String?
+  role              UserRole      @default(TENANT)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  password          String
+  invitations       Invitation[]
+  invoices          Invoice[]
+  managedProperties Property[]    @relation("AgentProperties")
+  rentedProperty    Property?     @relation("TenantProperty")
+  inspections       Inspection[]
+  ticketReplies     TicketReply[]
+}
+
+model Invitation {
+  id         String           @id @default(uuid())
+  email      String
+  token      String           @unique
+  propertyId String?
+  status     InvitationStatus @default(PENDING)
+  expiresAt  DateTime
+  createdAt  DateTime         @default(now())
+  agentId    String
+  agent      User             @relation(fields: [agentId], references: [id])
+  property   Property?        @relation(fields: [propertyId], references: [id])
+}
+
+model Property {
+  id          String       @id @default(uuid())
+  title       String
+  address     String
+  rent        Decimal      @db.Decimal(10, 2)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  agentId     String
+  tenantId    String?      @unique
+  invitations Invitation[]
+  invoices    Invoice[]
+  agent       User         @relation("AgentProperties", fields: [agentId], references: [id])
+  tenant      User?        @relation("TenantProperty", fields: [tenantId], references: [id])
+  tickets     Ticket[]
+  inspections Inspection[]
+}
+
+model Ticket {
+  id          String        @id @default(uuid())
+  title       String
+  description String
+  photos      String[]
+  isUrgent    Boolean       @default(false)
+  status      TicketStatus  @default(OPEN)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  propertyId  String
+  property    Property      @relation(fields: [propertyId], references: [id])
+  replies     TicketReply[]
+}
+
+model Invoice {
+  id              String        @id @default(uuid())
+  amount          Decimal       @db.Decimal(10, 2)
+  dueDate         DateTime
+  status          InvoiceStatus @default(PENDING)
+  stripePaymentId String?
+  paidAt          DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  tenantId        String
+  billingMonth    DateTime
+  propertyId      String
+  property        Property      @relation(fields: [propertyId], references: [id])
+  tenant          User          @relation(fields: [tenantId], references: [id])
+}
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  EXPIRED
+}
+
+enum UserRole {
+  TENANT
+  AGENT
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  DONE
+  CLOSED
+}
+
+enum InvoiceStatus {
+  PENDING
+  PAID
+  OVERDUE
+}
+
+model Inspection {
+  id                String           @id @default(uuid())
+  propertyId        String
+  tenantId          String
+  scheduledDate     DateTime?
+  availableDates    DateTime[]
+  status            InspectionStatus @default(PENDING_SCHEDULE)
+  notes             String?
+  completedAt       DateTime?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  property          Property         @relation(fields: [propertyId], references: [id])
+  tenant            User             @relation(fields: [tenantId], references: [id])
+
+  @@index([propertyId])
+  @@index([tenantId])
+}
+
+enum InspectionStatus {
+  PENDING_SCHEDULE  // 中介已发起，等待租户选择时间
+  SCHEDULED         // 租户已选择时间
+  COMPLETED         // 查房已完成
+  CANCELLED         // 已取消
+}
+
+model TicketReply {
+  id        String   @id @default(uuid())
+  content   String
+  ticketId  String
+  userId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@index([ticketId])
+  @@index([userId])
+}
